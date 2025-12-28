@@ -58,18 +58,6 @@ body{
   left:10px;
   font-size:20px;
 }
-
-/* BUTTONS */
-#controls{
-  position:fixed;
-  bottom:10px;
-  left:50%;
-  transform:translateX(-50%);
-}
-button{
-  font-size:26px;
-  padding:15px;
-}
 </style>
 </head>
 
@@ -78,12 +66,6 @@ button{
 <div id="hud">
 Lives: <span id="lives">3</span> |
 Level: <span id="level">1</span>
-</div>
-
-<div id="controls">
-  <button id="left">⬅️</button>
-  <button id="jump">⤴️</button>
-  <button id="right">➡️</button>
 </div>
 
 <div id="player"></div>
@@ -107,37 +89,24 @@ let onGround = true;
 let lives = 3;
 let level = 1;
 
-let goLeft = false;
-let goRight = false;
+let left = false;
+let right = false;
 
-const gravity = 1;
+const gravity = 0.8;
 const speed = 5;
 const jumpPower = 15;
 
 /* ===== CONTROLS ===== */
 document.addEventListener("keydown", e=>{
-  if(e.key==="ArrowLeft") goLeft = true;
-  if(e.key==="ArrowRight") goRight = true;
-  if(e.key===" ") jump();
+  if(e.key === "ArrowLeft") left = true;
+  if(e.key === "ArrowRight") right = true;
+  if(e.key === " ") jump();
 });
 
 document.addEventListener("keyup", e=>{
-  if(e.key==="ArrowLeft") goLeft = false;
-  if(e.key==="ArrowRight") goRight = false;
+  if(e.key === "ArrowLeft") left = false;
+  if(e.key === "ArrowRight") right = false;
 });
-
-left.onmousedown = ()=> goLeft = true;
-left.onmouseup = ()=> goLeft = false;
-left.ontouchstart = ()=> goLeft = true;
-left.ontouchend = ()=> goLeft = false;
-
-right.onmousedown = ()=> goRight = true;
-right.onmouseup = ()=> goRight = false;
-right.ontouchstart = ()=> goRight = true;
-right.ontouchend = ()=> goRight = false;
-
-jump.onclick = jump;
-jump.ontouchstart = jump;
 
 /* ===== FUNCTIONS ===== */
 function jump(){
@@ -147,13 +116,12 @@ function jump(){
   }
 }
 
-function box(el){
+function rect(el){
   return el.getBoundingClientRect();
 }
 
 function die(){
   lives--;
-  alert("YOU DIED");
   if(lives <= 0){
     alert("GAME OVER");
     lives = 3;
@@ -167,14 +135,14 @@ function reset(){
   y = 50;
   velY = 0;
 
-  lava.style.left = (300 + level*30) + "px";
-  flag.style.left = (600 + level*20) + "px";
+  lava.style.left = (300 + level * 40) + "px";
+  flag.style.left = (600 + level * 50) + "px";
 }
 
 /* ===== GAME LOOP ===== */
 function loop(){
-  if(goLeft) x -= speed;
-  if(goRight) x += speed;
+  if(left) x -= speed;
+  if(right) x += speed;
 
   velY -= gravity;
   y += velY;
@@ -188,20 +156,32 @@ function loop(){
   player.style.left = x + "px";
   player.style.bottom = y + "px";
 
-  // COLLISIONS (REAL DOM COLLISION)
-  const p = box(player);
-  const l = box(lava);
-  const f = box(flag);
+  const p = rect(player);
+  const l = rect(lava);
+  const f = rect(flag);
 
+  // Lava = death
   if(!(p.right < l.left || p.left > l.right || p.bottom < l.top || p.top > l.bottom)){
     die();
   }
 
+  // Flag = next level
   if(!(p.right < f.left || p.left > f.right || p.bottom < f.top || p.top > f.bottom)){
     level++;
-    alert("LEVEL UP!");
     reset();
   }
 
   livesText.textContent = lives;
-  levelText.textContent = leve
+  levelText.textContent = level;
+
+  requestAnimationFrame(loop);
+}
+
+/* START GAME */
+reset();
+loop();
+</script>
+
+</body>
+</html>
+
