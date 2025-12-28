@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WORKING GAME FINAL</title>
+<title>RANDOM PLATFORMER</title>
 
 <style>
 body{
@@ -12,25 +12,15 @@ body{
   font-family:Arial;
 }
 
-/* PLAYER */
 #player{
   position:absolute;
   width:40px;
   height:60px;
   background:red;
-  left:100px;
   bottom:50px;
+  left:100px;
 }
 
-/* BULLET */
-.bullet{
-  position:absolute;
-  width:10px;
-  height:5px;
-  background:black;
-}
-
-/* ENEMY */
 .enemy{
   position:absolute;
   width:40px;
@@ -39,24 +29,28 @@ body{
   bottom:50px;
 }
 
-/* BOSS */
 .boss{
   position:absolute;
-  width:80px;
-  height:80px;
+  width:90px;
+  height:90px;
   background:black;
   bottom:50px;
 }
 
-/* LAVA */
-#lava{
+.bullet{
+  position:absolute;
+  width:10px;
+  height:5px;
+  background:black;
+}
+
+.lava{
   position:absolute;
   height:25px;
   background:orange;
   bottom:50px;
 }
 
-/* FLAG */
 #flag{
   position:absolute;
   width:40px;
@@ -65,7 +59,6 @@ body{
   bottom:50px;
 }
 
-/* GROUND */
 #ground{
   position:absolute;
   bottom:0;
@@ -74,7 +67,6 @@ body{
   background:green;
 }
 
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -92,54 +84,49 @@ Level: <span id="level">1</span>
 </div>
 
 <div id="player"></div>
-<div id="lava"></div>
 <div id="flag"></div>
 <div id="ground"></div>
 
 <script>
-/* ===== VARIABLES ===== */
-const player = document.getElementById("player");
-const lava = document.getElementById("lava");
-const flag = document.getElementById("flag");
-const livesText = document.getElementById("lives");
-const levelText = document.getElementById("level");
+const player=document.getElementById("player");
+const flag=document.getElementById("flag");
+const livesText=document.getElementById("lives");
+const levelText=document.getElementById("level");
 
 let x=100,y=50,velY=0,onGround=true;
 let lives=3,level=1;
-let left=false,right=false;
-let bullets=[],enemies=[];
+let moveLeft=false,moveRight=false,facing=1;
+
+let bullets=[],enemies=[],lavas=[];
 let boss=null,bossHP=0;
 
 const gravity=0.9,speed=5,jumpPower=15;
 
-/* ===== CONTROLS ===== */
+/* CONTROLS */
 document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowLeft") left=true;
-  if(e.key==="ArrowRight") right=true;
+  if(e.key==="ArrowLeft"){moveLeft=true;facing=-1;}
+  if(e.key==="ArrowRight"){moveRight=true;facing=1;}
   if(e.key===" "||e.key==="ArrowUp") jump();
-  if(e.key==="f") shoot();
+  if(e.key==="f"||e.key==="F") shoot();
 });
 document.addEventListener("keyup",e=>{
-  if(e.key==="ArrowLeft") left=false;
-  if(e.key==="ArrowRight") right=false;
+  if(e.key==="ArrowLeft") moveLeft=false;
+  if(e.key==="ArrowRight") moveRight=false;
 });
 
-/* ===== FUNCTIONS ===== */
 function jump(){
   if(onGround){velY=jumpPower;onGround=false;}
 }
 
 function rect(el){return el.getBoundingClientRect();}
-
-function collide(a,b){
-  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
-}
+function hit(a,b){return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);}
 
 function shoot(){
   const b=document.createElement("div");
   b.className="bullet";
-  b.x=x+40;
+  b.x=x+20;
   b.y=y+30;
+  b.dir=facing;
   document.body.appendChild(b);
   bullets.push(b);
 }
@@ -151,44 +138,54 @@ function die(){
     lives=3;
     level=1;
   }
-  reset();
+  buildLevel();
 }
 
-function reset(){
+/* 🔥 RANDOM LEVEL GENERATION */
+function buildLevel(){
   x=100;y=50;velY=0;
-
   bullets.forEach(b=>b.remove());
   enemies.forEach(e=>e.remove());
-  bullets=[];enemies=[];
+  lavas.forEach(l=>l.remove());
+  bullets=[];enemies=[];lavas=[];
   if(boss){boss.remove();boss=null;}
 
-  lava.style.left=(250+level*40)+"px";
-  lava.style.width=(60+level*10)+"px";
+  /* Random lava */
+  const lavaCount=Math.min(1+Math.floor(level/2),5);
+  for(let i=0;i<lavaCount;i++){
+    const l=document.createElement("div");
+    l.className="lava";
+    l.style.left=(200+Math.random()*800)+"px";
+    l.style.width=(60+Math.random()*60+level*5)+"px";
+    document.body.appendChild(l);
+    lavas.push(l);
+  }
 
   if(level%10===0){
     boss=document.createElement("div");
     boss.className="boss";
-    boss.style.left="500px";
+    boss.style.left="600px";
     document.body.appendChild(boss);
-    bossHP=5+level/10;
+    bossHP=5+Math.floor(level/2);
     flag.style.display="none";
   }else{
-    flag.style.display="block";
-    flag.style.left=(500+level*60)+"px";
-    for(let i=0;i<level;i++){
+    const enemyCount=Math.min(level+1,8);
+    for(let i=0;i<enemyCount;i++){
       const e=document.createElement("div");
       e.className="enemy";
-      e.style.left=(300+i*100)+"px";
+      e.style.left=(300+Math.random()*800)+"px";
       document.body.appendChild(e);
       enemies.push(e);
     }
+    flag.style.display="block";
+    flag.style.left=(900+Math.random()*300)+"px";
   }
 }
 
-/* ===== GAME LOOP ===== */
+/* GAME LOOP */
 function loop(){
-  if(left)x-=speed;
-  if(right)x+=speed;
+  if(moveLeft)x-=speed;
+  if(moveRight)x+=speed;
 
   velY-=gravity;
   y+=velY;
@@ -200,39 +197,39 @@ function loop(){
   const p=rect(player);
 
   /* Lava */
-  if(collide(p,rect(lava))) die();
+  lavas.forEach(l=>{
+    if(hit(p,rect(l))) die();
+  });
 
   /* Bullets */
   bullets.forEach((b,i)=>{
-    b.x+=10;
+    b.x+=b.dir*10;
     b.style.left=b.x+"px";
     b.style.bottom=b.y+"px";
 
     enemies.forEach((e,ei)=>{
-      if(collide(rect(b),rect(e))){
+      if(hit(rect(b),rect(e))){
         e.remove();enemies.splice(ei,1);
         b.remove();bullets.splice(i,1);
       }
     });
 
-    if(boss && collide(rect(b),rect(boss))){
+    if(boss && hit(rect(b),rect(boss))){
       bossHP--;
       b.remove();bullets.splice(i,1);
       if(bossHP<=0){
         boss.remove();boss=null;
-        level++;reset();
+        level++;buildLevel();
       }
     }
   });
 
-  /* Enemies */
   enemies.forEach(e=>{
-    if(collide(p,rect(e))) die();
+    if(hit(p,rect(e))) die();
   });
 
-  /* Flag */
-  if(enemies.length===0 && !boss && collide(p,rect(flag))){
-    level++;reset();
+  if(!boss && enemies.length===0 && hit(p,rect(flag))){
+    level++;buildLevel();
   }
 
   livesText.textContent=lives;
@@ -242,12 +239,9 @@ function loop(){
 }
 
 /* START */
-reset();
+buildLevel();
 loop();
 </script>
 
 </body>
 </html>
-
-
-
