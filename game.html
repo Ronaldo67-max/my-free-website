@@ -22,10 +22,35 @@ body{
   bottom:50px;
 }
 
+/* BULLET */
+.bullet{
+  position:absolute;
+  width:10px;
+  height:5px;
+  background:black;
+}
+
+/* ENEMY */
+.enemy{
+  position:absolute;
+  width:40px;
+  height:40px;
+  background:purple;
+  bottom:50px;
+}
+
+/* BOSS */
+.boss{
+  position:absolute;
+  width:80px;
+  height:80px;
+  background:black;
+  bottom:50px;
+}
+
 /* LAVA */
 #lava{
   position:absolute;
-  width:80px;          /* 🔥 SHORTER LAVA */
   height:25px;
   background:orange;
   bottom:50px;
@@ -79,118 +104,144 @@ const flag = document.getElementById("flag");
 const livesText = document.getElementById("lives");
 const levelText = document.getElementById("level");
 
-let x = 100;
-let y = 50;
-let velY = 0;
-let onGround = true;
+let x=100,y=50,velY=0,onGround=true;
+let lives=3,level=1;
+let left=false,right=false;
+let bullets=[],enemies=[];
+let boss=null,bossHP=0;
 
-let lives = 3;
-let level = 1;
-
-let left = false;
-let right = false;
-
-const gravity = 0.9;
-const speed = 5;
-const jumpPower = 15;
+const gravity=0.9,speed=5,jumpPower=15;
 
 /* ===== CONTROLS ===== */
-document.addEventListener("keydown", e=>{
-  if(e.key === "ArrowLeft") left = true;
-  if(e.key === "ArrowRight") right = true;
-  if(e.key === " " || e.key === "ArrowUp") jump();
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft") left=true;
+  if(e.key==="ArrowRight") right=true;
+  if(e.key===" "||e.key==="ArrowUp") jump();
+  if(e.key==="f") shoot();
 });
-
-document.addEventListener("keyup", e=>{
-  if(e.key === "ArrowLeft") left = false;
-  if(e.key === "ArrowRight") right = false;
+document.addEventListener("keyup",e=>{
+  if(e.key==="ArrowLeft") left=false;
+  if(e.key==="ArrowRight") right=false;
 });
 
 /* ===== FUNCTIONS ===== */
 function jump(){
-  if(onGround){
-    velY = jumpPower;
-    onGround = false;
-  }
+  if(onGround){velY=jumpPower;onGround=false;}
 }
 
-function rect(el){
-  return el.getBoundingClientRect();
-}
+function rect(el){return el.getBoundingClientRect();}
 
 function collide(a,b){
-  return !(
-    a.right < b.left ||
-    a.left > b.right ||
-    a.bottom < b.top ||
-    a.top > b.bottom
-  );
+  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+}
+
+function shoot(){
+  const b=document.createElement("div");
+  b.className="bullet";
+  b.x=x+40;
+  b.y=y+30;
+  document.body.appendChild(b);
+  bullets.push(b);
 }
 
 function die(){
   lives--;
-  if(lives <= 0){
+  if(lives<=0){
     alert("GAME OVER");
-    lives = 3;
-    level = 1;
+    lives=3;
+    level=1;
   }
   reset();
 }
 
 function reset(){
-  x = 100;
-  y = 50;
-  velY = 0;
+  x=100;y=50;velY=0;
 
-  /* LEVEL SCALING */
-  lava.style.left = (250 + level * 60) + "px";
-  lava.style.width = (60 + level * 10) + "px"; // 🔥 grows slowly
-  flag.style.left = (500 + level * 80) + "px";
+  bullets.forEach(b=>b.remove());
+  enemies.forEach(e=>e.remove());
+  bullets=[];enemies=[];
+  if(boss){boss.remove();boss=null;}
+
+  lava.style.left=(250+level*40)+"px";
+  lava.style.width=(60+level*10)+"px";
+
+  if(level%10===0){
+    boss=document.createElement("div");
+    boss.className="boss";
+    boss.style.left="500px";
+    document.body.appendChild(boss);
+    bossHP=5+level/10;
+    flag.style.display="none";
+  }else{
+    flag.style.display="block";
+    flag.style.left=(500+level*60)+"px";
+    for(let i=0;i<level;i++){
+      const e=document.createElement("div");
+      e.className="enemy";
+      e.style.left=(300+i*100)+"px";
+      document.body.appendChild(e);
+      enemies.push(e);
+    }
+  }
 }
 
 /* ===== GAME LOOP ===== */
 function loop(){
-  /* Movement */
-  if(left) x -= speed;
-  if(right) x += speed;
+  if(left)x-=speed;
+  if(right)x+=speed;
 
-  /* Gravity */
-  velY -= gravity;
-  y += velY;
+  velY-=gravity;
+  y+=velY;
+  if(y<=50){y=50;velY=0;onGround=true;}
 
-  if(y <= 50){
-    y = 50;
-    velY = 0;
-    onGround = true;
+  player.style.left=x+"px";
+  player.style.bottom=y+"px";
+
+  const p=rect(player);
+
+  /* Lava */
+  if(collide(p,rect(lava))) die();
+
+  /* Bullets */
+  bullets.forEach((b,i)=>{
+    b.x+=10;
+    b.style.left=b.x+"px";
+    b.style.bottom=b.y+"px";
+
+    enemies.forEach((e,ei)=>{
+      if(collide(rect(b),rect(e))){
+        e.remove();enemies.splice(ei,1);
+        b.remove();bullets.splice(i,1);
+      }
+    });
+
+    if(boss && collide(rect(b),rect(boss))){
+      bossHP--;
+      b.remove();bullets.splice(i,1);
+      if(bossHP<=0){
+        boss.remove();boss=null;
+        level++;reset();
+      }
+    }
+  });
+
+  /* Enemies */
+  enemies.forEach(e=>{
+    if(collide(p,rect(e))) die();
+  });
+
+  /* Flag */
+  if(enemies.length===0 && !boss && collide(p,rect(flag))){
+    level++;reset();
   }
 
-  /* Apply position */
-  player.style.left = x + "px";
-  player.style.bottom = y + "px";
-
-  /* Collisions */
-  const p = rect(player);
-  const l = rect(lava);
-  const f = rect(flag);
-
-  /* Lava = death */
-  if(collide(p,l)){
-    die();
-  }
-
-  /* Flag = next level */
-  if(collide(p,f)){
-    level++;
-    reset();
-  }
-
-  livesText.textContent = lives;
-  levelText.textContent = level;
+  livesText.textContent=lives;
+  levelText.textContent=level;
 
   requestAnimationFrame(loop);
 }
 
-/* START GAME */
+/* START */
 reset();
 loop();
 </script>
