@@ -1,36 +1,250 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My First Game</title>
-  <style>
-    body {
-      text-align: center;
-      font-family: Arial;
-      background: #111;
-      color: white;
-    }
-    button {
-      font-size: 24px;
-      padding: 20px;
-      margin-top: 50px;
-      cursor: pointer;
-    }
-  </style>
+<title>WORKING GAME</title>
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:#87ceeb;
+  font-family:Arial;
+}
+
+/* PLAYER */
+#player{
+  position:absolute;
+  width:40px;
+  height:60px;
+  background:red;
+  left:100px;
+  bottom:50px;
+}
+
+/* ENEMY */
+.enemy{
+  position:absolute;
+  width:40px;
+  height:40px;
+  background:purple;
+  bottom:50px;
+}
+
+/* LAVA */
+.lava{
+  position:absolute;
+  width:120px;
+  height:20px;
+  background:orange;
+  bottom:50px;
+}
+
+/* FLAG */
+#flag{
+  position:absolute;
+  width:30px;
+  height:60px;
+  background:gold;
+  bottom:50px;
+}
+
+/* GROUND */
+#ground{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:50px;
+  background:green;
+}
+
+/* HUD */
+#hud{
+  position:fixed;
+  top:10px;
+  left:10px;
+  font-size:18px;
+}
+
+/* BUTTONS */
+#controls{
+  position:fixed;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+}
+button{
+  font-size:24px;
+  padding:15px;
+}
+</style>
 </head>
+
 <body>
 
-  <h1>Click the Button Game 🎮</h1>
-  <p>Score: <span id="score">0</span></p>
+<div id="hud">
+Lives: <span id="lives">3</span> |
+Level: <span id="level">1</span>
+</div>
 
-  <button onclick="addPoint()">CLICK ME</button>
+<div id="controls">
+  <button id="left">⬅️</button>
+  <button id="jump">⤴️</button>
+  <button id="right">➡️</button>
+</div>
 
-  <script>
-    let score = 0;
-    function addPoint() {
-      score++;
-      document.getElementById("score").innerText = score;
+<div id="player"></div>
+<div id="flag"></div>
+<div id="ground"></div>
+
+<script>
+/* ===== VARIABLES ===== */
+const player = document.getElementById("player");
+const flag = document.getElementById("flag");
+const livesText = document.getElementById("lives");
+const levelText = document.getElementById("level");
+
+let x = 100;
+let y = 50;
+let velY = 0;
+let onGround = true;
+
+let lives = 3;
+let level = 1;
+
+let left = false;
+let right = false;
+
+let enemies = [];
+let lavas = [];
+
+const gravity = 1;
+const speed = 5;
+const jumpPower = 15;
+
+/* ===== CONTROLS ===== */
+// Keyboard (NO preventDefault)
+window.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft") left=true;
+  if(e.key==="ArrowRight") right=true;
+  if(e.key===" ") jump();
+});
+window.addEventListener("keyup", e=>{
+  if(e.key==="ArrowLeft") left=false;
+  if(e.key==="ArrowRight") right=false;
+});
+
+// Buttons (FORCE TOUCH SUPPORT)
+left.onmousedown = ()=> left=true;
+left.onmouseup = ()=> left=false;
+left.ontouchstart = ()=> left=true;
+left.ontouchend = ()=> left=false;
+
+right.onmousedown = ()=> right=true;
+right.onmouseup = ()=> right=false;
+right.ontouchstart = ()=> right=true;
+right.ontouchend = ()=> right=false;
+
+jump.onclick = jump;
+jump.ontouchstart = jump;
+
+/* ===== FUNCTIONS ===== */
+function jump(){
+  if(onGround){
+    velY = jumpPower;
+    onGround = false;
+  }
+}
+
+function hit(a,b){
+  return !(a.right<b.left || a.left>b.right || a.bottom<b.top || a.top>b.bottom);
+}
+
+function resetLevel(){
+  enemies.forEach(e=>e.remove());
+  lavas.forEach(l=>l.remove());
+  enemies=[];
+  lavas=[];
+
+  x=100;
+  y=50;
+  velY=0;
+
+  flag.style.left = (window.innerWidth - 60) + "px";
+
+  // ONE enemy and lava MINIMUM (PASSABLE)
+  let e=document.createElement("div");
+  e.className="enemy";
+  e.x=300;
+  e.style.left=e.x+"px";
+  document.body.appendChild(e);
+  enemies.push(e);
+
+  let l=document.createElement("div");
+  l.className="lava";
+  l.x=500;
+  l.style.left=l.x+"px";
+  document.body.appendChild(l);
+  lavas.push(l);
+}
+
+/* ===== GAME LOOP ===== */
+function loop(){
+  if(left) x-=speed;
+  if(right) x+=speed;
+
+  velY -= gravity;
+  y += velY;
+
+  if(y<=50){
+    y=50;
+    velY=0;
+    onGround=true;
+  }
+
+  let p={left:x,right:x+40,top:y+60,bottom:y};
+
+  enemies.forEach(e=>{
+    let eb={left:e.x,right:e.x+40,top:90,bottom:50};
+    if(hit(p,eb)){
+      lives--;
+      resetLevel();
     }
-  </script>
+  });
+
+  lavas.forEach(l=>{
+    let lb={left:l.x,right:l.x+120,top:70,bottom:50};
+    if(hit(p,lb)){
+      lives--;
+      resetLevel();
+    }
+  });
+
+  let fx=parseInt(flag.style.left);
+  let fb={left:fx,right:fx+30,top:110,bottom:50};
+  if(hit(p,fb)){
+    level++;
+    resetLevel();
+  }
+
+  if(lives<=0){
+    alert("GAME OVER");
+    lives=3;
+    level=1;
+    resetLevel();
+  }
+
+  player.style.left=x+"px";
+  player.style.bottom=y+"px";
+
+  livesText.textContent=lives;
+  levelText.textContent=level;
+
+  requestAnimationFrame(loop);
+}
+
+/* ===== START ===== */
+resetLevel();
+loop();
+</script>
 
 </body>
 </html>
