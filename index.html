@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Working Platformer</title>
+<title>Simple Platformer</title>
 
 <style>
-html,body{
+body{
   margin:0;
-  padding:0;
   overflow:hidden;
   background:#87ceeb;
   font-family:Arial;
@@ -57,19 +56,7 @@ html,body{
   position:fixed;
   top:10px;
   left:10px;
-  font-size:16px;
 }
-
-button{
-  position:fixed;
-  bottom:10px;
-  font-size:20px;
-  padding:10px;
-}
-
-#leftBtn{left:10px;}
-#jumpBtn{left:80px;}
-#rightBtn{left:150px;}
 </style>
 </head>
 
@@ -79,10 +66,6 @@ button{
 Lives: <span id="lives">3</span> |
 Level: <span id="level">1</span>
 </div>
-
-<button id="leftBtn">⬅️</button>
-<button id="jumpBtn">⤴️</button>
-<button id="rightBtn">➡️</button>
 
 <div id="player"></div>
 <div id="flag"></div>
@@ -95,35 +78,30 @@ const flag=document.getElementById("flag");
 const livesText=document.getElementById("lives");
 const levelText=document.getElementById("level");
 
-let x=100,y=50,velY=0,onGround=true;
-let lives=3,level=1;
+let x=100,y=50;
+let velY=0;
+let onGround=true;
 
-let moveLeft=false,moveRight=false;
+let lives=3;
+let level=1;
+
+let left=false,right=false;
 let enemies=[],lavas=[];
 
 const gravity=1;
 const speed=5;
-const jumpPower=16;
+const jumpPower=15;
 
 /* ===== CONTROLS ===== */
-// Keyboard
-window.addEventListener("keydown",e=>{
-  if(e.key==="ArrowLeft"||e.key==="a") moveLeft=true;
-  if(e.key==="ArrowRight"||e.key==="d") moveRight=true;
-  if(e.key===" "||e.key==="ArrowUp") jump();
+addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft") left=true;
+  if(e.key==="ArrowRight") right=true;
+  if(e.key===" ") jump();
 });
-
-window.addEventListener("keyup",e=>{
-  if(e.key==="ArrowLeft"||e.key==="a") moveLeft=false;
-  if(e.key==="ArrowRight"||e.key==="d") moveRight=false;
+addEventListener("keyup",e=>{
+  if(e.key==="ArrowLeft") left=false;
+  if(e.key==="ArrowRight") right=false;
 });
-
-// Buttons
-leftBtn.onmousedown=()=>moveLeft=true;
-leftBtn.onmouseup=()=>moveLeft=false;
-rightBtn.onmousedown=()=>moveRight=true;
-rightBtn.onmouseup=()=>moveRight=false;
-jumpBtn.onclick=jump;
 
 /* ===== FUNCTIONS ===== */
 function jump(){
@@ -138,34 +116,25 @@ function hit(a,b){
 }
 
 function resetLevel(){
-  // Clear old stuff
   enemies.forEach(e=>e.remove());
   lavas.forEach(l=>l.remove());
   enemies=[];
   lavas=[];
 
-  // Reset player
-  x=100;
-  y=50;
-  velY=0;
+  x=100; y=50; velY=0;
 
-  // Flag
   flag.style.left=(innerWidth-60)+"px";
 
-  // Enemies
   for(let i=0;i<level;i++){
-    const e=document.createElement("div");
+    let e=document.createElement("div");
     e.className="enemy";
     e.x=300+i*200;
     e.dir=1;
     e.style.left=e.x+"px";
     document.body.appendChild(e);
     enemies.push(e);
-  }
 
-  // Lava
-  for(let i=0;i<level;i++){
-    const l=document.createElement("div");
+    let l=document.createElement("div");
     l.className="lava";
     l.x=200+i*300;
     l.style.left=l.x+"px";
@@ -174,53 +143,43 @@ function resetLevel(){
   }
 }
 
-/* ===== GAME LOOP ===== */
+/* ===== LOOP ===== */
 function loop(){
-  // Move
-  if(moveLeft) x-=speed;
-  if(moveRight) x+=speed;
+  if(left) x-=speed;
+  if(right) x+=speed;
 
-  // Screen bounds
-  x=Math.max(0,Math.min(innerWidth-40,x));
-
-  // Gravity
   velY-=gravity;
   y+=velY;
   if(y<=50){y=50;velY=0;onGround=true;}
 
-  const p={left:x,right:x+40,top:y+60,bottom:y};
+  let p={left:x,right:x+40,top:y+60,bottom:y};
 
-  // Enemies
   enemies.forEach(e=>{
     e.x+=e.dir*2;
     if(e.x<100||e.x>innerWidth-100) e.dir*=-1;
     e.style.left=e.x+"px";
-
-    const eb={left:e.x,right:e.x+40,top:90,bottom:50};
+    let eb={left:e.x,right:e.x+40,top:90,bottom:50};
     if(hit(p,eb)){
       lives--;
       resetLevel();
     }
   });
 
-  // Lava
   lavas.forEach(l=>{
-    const lb={left:l.x,right:l.x+120,top:70,bottom:50};
+    let lb={left:l.x,right:l.x+120,top:70,bottom:50};
     if(hit(p,lb)){
       lives--;
       resetLevel();
     }
   });
 
-  // Flag
-  const fx=parseInt(flag.style.left);
-  const fb={left:fx,right:fx+30,top:110,bottom:50};
+  let fx=parseInt(flag.style.left);
+  let fb={left:fx,right:fx+30,top:110,bottom:50};
   if(hit(p,fb)){
     level++;
     resetLevel();
   }
 
-  // Game over
   if(lives<=0){
     alert("GAME OVER");
     lives=3;
@@ -228,7 +187,6 @@ function loop(){
     resetLevel();
   }
 
-  // Draw
   player.style.left=x+"px";
   player.style.bottom=y+"px";
   livesText.textContent=lives;
