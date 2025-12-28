@@ -249,4 +249,37 @@ loop();
 
 </body>
 </html>
+// 🏁 LEVEL COMPLETE
+const flagBox = {left: innerWidth-70, right: innerWidth-40, top:110, bottom:50};
+const playerBox = {left:x, right:x+40, top:y+60, bottom:y};
+
+if(hit(playerBox, flagBox)){
+  level++;
+  score += 500;
+  sound(900,.3);
+
+  // reset level
+  x = spawnX = 100;
+  y = spawnY = 50;
+  velX = velY = 0;
+
+  // respawn enemies
+  document.querySelectorAll(".enemy").forEach(e=>e.remove());
+  enemies.length = 0;
+
+  for(let i=0;i<level+1;i++){
+    const e=document.createElement("div");
+    e.className="enemy";
+    e.style.left=(300+i*200)+"px";
+    document.body.appendChild(e);
+    enemies.push(e);
+  }
+
+  bossActive=false;
+  boss.style.display="none";
+  bossHP=5;
+  bossHPText.textContent=bossHP;
+
+  save();
+}
 
