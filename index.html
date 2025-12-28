@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Platform Game</title>
+  <title>Platform Game</title>
 
   <style>
     body {
@@ -21,26 +21,74 @@
     #player {
       width: 48px;
       height: 48px;
-
-      /* CHARACTER IMAGE */
-      background-image: url("player.png");
-      background-size: cover;
-      background-repeat: no-repeat;
-
-      /* backup if image fails */
-      background-color: red;
-
       position: absolute;
       left: 50px;
       bottom: 50px;
+
+      /* COLOR ANIMATION (WORKS WITHOUT IMAGES) */
+      background: red;
+
+      transition: background 0.1s;
     }
+
+    /* WALKING ANIMATION */
+    .walk1 { background: #ff4d4d; }
+    .walk2 { background: #ff9999; }
+    .idle  { background: red; }
   </style>
 </head>
 
 <body>
 
-  <div id="player"></div>
+  <div id="player" class="idle"></div>
   <div id="ground"></div>
 
   <script>
-    let x = 50
+    let x = 50;
+    let y = 50;
+    let velocityY = 0;
+    let isJumping = false;
+    let walkingFrame = 0;
+    let moving = false;
+
+    const gravity = 1;
+    const jumpPower = 18;
+    const groundLevel = 50;
+
+    const player = document.getElementById("player");
+
+    function gameLoop() {
+      // Gravity
+      velocityY -= gravity;
+      y += velocityY;
+
+      if (y <= groundLevel) {
+        y = groundLevel;
+        velocityY = 0;
+        isJumping = false;
+      }
+
+      // Walking animation
+      if (moving && !isJumping) {
+        walkingFrame++;
+        if (walkingFrame % 20 < 10) {
+          player.className = "walk1";
+        } else {
+          player.className = "walk2";
+        }
+      } else if (!isJumping) {
+        player.className = "idle";
+      }
+
+      player.style.left = x + "px";
+      player.style.bottom = y + "px";
+
+      moving = false;
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "ArrowRight") {
+        x += 5;
+        moving = true;
+      }
