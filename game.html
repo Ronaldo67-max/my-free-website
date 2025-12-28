@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>WORKING GAME</title>
+<title>ACTUALLY WORKING PLATFORMER</title>
 <style>
 body{
   margin:0;
@@ -10,7 +10,6 @@ body{
   font-family:Arial;
 }
 
-/* PLAYER */
 #player{
   position:absolute;
   width:40px;
@@ -20,7 +19,6 @@ body{
   bottom:50px;
 }
 
-/* ENEMY */
 .enemy{
   position:absolute;
   width:40px;
@@ -29,25 +27,22 @@ body{
   bottom:50px;
 }
 
-/* LAVA */
 .lava{
   position:absolute;
-  width:120px;
-  height:20px;
-  background:orange;
+  width:150px;
+  height:25px;
+  background:orangered;
   bottom:50px;
 }
 
-/* FLAG */
 #flag{
   position:absolute;
-  width:30px;
-  height:60px;
+  width:50px;
+  height:80px;
   background:gold;
   bottom:50px;
 }
 
-/* GROUND */
 #ground{
   position:absolute;
   bottom:0;
@@ -56,15 +51,13 @@ body{
   background:green;
 }
 
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
   left:10px;
-  font-size:18px;
+  font-size:20px;
 }
 
-/* BUTTONS */
 #controls{
   position:fixed;
   bottom:10px;
@@ -96,66 +89,68 @@ Level: <span id="level">1</span>
 <div id="ground"></div>
 
 <script>
-/* ===== VARIABLES ===== */
-const player = document.getElementById("player");
-const flag = document.getElementById("flag");
-const livesText = document.getElementById("lives");
-const levelText = document.getElementById("level");
+/* ===== CORE ===== */
+const player=document.getElementById("player");
+const flag=document.getElementById("flag");
+const livesText=document.getElementById("lives");
+const levelText=document.getElementById("level");
 
-let x = 100;
-let y = 50;
-let velY = 0;
-let onGround = true;
+let x=100,y=50;
+let velY=0,onGround=true;
+let lives=3,level=1;
 
-let lives = 3;
-let level = 1;
+let left=false,right=false;
 
-let left = false;
-let right = false;
+let enemies=[],lavas=[];
 
-let enemies = [];
-let lavas = [];
-
-const gravity = 1;
-const speed = 5;
-const jumpPower = 15;
+const gravity=1;
+const speed=5;
+const jumpPower=16;
 
 /* ===== CONTROLS ===== */
-// Keyboard (NO preventDefault)
-window.addEventListener("keydown", e=>{
+window.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft") left=true;
   if(e.key==="ArrowRight") right=true;
   if(e.key===" ") jump();
 });
-window.addEventListener("keyup", e=>{
+window.addEventListener("keyup",e=>{
   if(e.key==="ArrowLeft") left=false;
   if(e.key==="ArrowRight") right=false;
 });
 
-// Buttons (FORCE TOUCH SUPPORT)
-left.onmousedown = ()=> left=true;
-left.onmouseup = ()=> left=false;
-left.ontouchstart = ()=> left=true;
-left.ontouchend = ()=> left=false;
+left.onmousedown=()=>left=true;
+left.onmouseup=()=>left=false;
+left.ontouchstart=()=>left=true;
+left.ontouchend=()=>left=false;
 
-right.onmousedown = ()=> right=true;
-right.onmouseup = ()=> right=false;
-right.ontouchstart = ()=> right=true;
-right.ontouchend = ()=> right=false;
+right.onmousedown=()=>right=true;
+right.onmouseup=()=>right=false;
+right.ontouchstart=()=>right=true;
+right.ontouchend=()=>right=false;
 
-jump.onclick = jump;
-jump.ontouchstart = jump;
+jump.onclick=jump;
+jump.ontouchstart=jump;
 
 /* ===== FUNCTIONS ===== */
 function jump(){
   if(onGround){
-    velY = jumpPower;
-    onGround = false;
+    velY=jumpPower;
+    onGround=false;
   }
 }
 
 function hit(a,b){
-  return !(a.right<b.left || a.left>b.right || a.bottom<b.top || a.top>b.bottom);
+  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+}
+
+function die(){
+  lives--;
+  if(lives<=0){
+    alert("GAME OVER");
+    lives=3;
+    level=1;
+  }
+  resetLevel();
 }
 
 function resetLevel(){
@@ -168,9 +163,10 @@ function resetLevel(){
   y=50;
   velY=0;
 
-  flag.style.left = (window.innerWidth - 60) + "px";
+  // FLAG
+  flag.style.left=(innerWidth-80)+"px";
 
-  // ONE enemy and lava MINIMUM (PASSABLE)
+  // ENEMY
   let e=document.createElement("div");
   e.className="enemy";
   e.x=300;
@@ -178,6 +174,7 @@ function resetLevel(){
   document.body.appendChild(e);
   enemies.push(e);
 
+  // LAVA
   let l=document.createElement("div");
   l.className="lava";
   l.x=500;
@@ -186,13 +183,13 @@ function resetLevel(){
   lavas.push(l);
 }
 
-/* ===== GAME LOOP ===== */
+/* ===== LOOP ===== */
 function loop(){
   if(left) x-=speed;
   if(right) x+=speed;
 
-  velY -= gravity;
-  y += velY;
+  velY-=gravity;
+  y+=velY;
 
   if(y<=50){
     y=50;
@@ -202,33 +199,23 @@ function loop(){
 
   let p={left:x,right:x+40,top:y+60,bottom:y};
 
+  // ENEMY DEATH
   enemies.forEach(e=>{
     let eb={left:e.x,right:e.x+40,top:90,bottom:50};
-    if(hit(p,eb)){
-      lives--;
-      resetLevel();
-    }
+    if(hit(p,eb)) die();
   });
 
+  // LAVA DEATH
   lavas.forEach(l=>{
-    let lb={left:l.x,right:l.x+120,top:70,bottom:50};
-    if(hit(p,lb)){
-      lives--;
-      resetLevel();
-    }
+    let lb={left:l.x,right:l.x+150,top:80,bottom:50};
+    if(hit(p,lb)) die();
   });
 
+  // FLAG = NEXT LEVEL (BIG HITBOX)
   let fx=parseInt(flag.style.left);
-  let fb={left:fx,right:fx+30,top:110,bottom:50};
+  let fb={left:fx-20,right:fx+80,top:140,bottom:50};
   if(hit(p,fb)){
     level++;
-    resetLevel();
-  }
-
-  if(lives<=0){
-    alert("GAME OVER");
-    lives=3;
-    level=1;
     resetLevel();
   }
 
