@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Platformer Game</title>
+<title>Working Platformer</title>
+
 <style>
-body{
+html,body{
   margin:0;
-  background:#87ceeb;
+  padding:0;
   overflow:hidden;
+  background:#87ceeb;
   font-family:Arial;
 }
 
@@ -15,6 +17,7 @@ body{
   width:40px;
   height:60px;
   background:red;
+  left:100px;
   bottom:50px;
 }
 
@@ -26,32 +29,19 @@ body{
   bottom:50px;
 }
 
+.lava{
+  position:absolute;
+  width:120px;
+  height:20px;
+  background:orangered;
+  bottom:50px;
+}
+
 #flag{
   position:absolute;
   width:30px;
   height:60px;
   background:gold;
-  bottom:50px;
-}
-
-.lava{
-  position:absolute;
-  height:20px;
-  background:linear-gradient(red,orange,yellow);
-  bottom:50px;
-  animation: lava 0.4s infinite alternate;
-}
-
-@keyframes lava{
-  from{filter:brightness(1);}
-  to{filter:brightness(1.4);}
-}
-
-#checkpoint{
-  position:absolute;
-  width:30px;
-  height:30px;
-  background:blue;
   bottom:50px;
 }
 
@@ -67,93 +57,83 @@ body{
   position:fixed;
   top:10px;
   left:10px;
+  color:black;
   font-size:16px;
 }
 
-#gameover{
-  position:fixed;
-  inset:0;
-  background:black;
-  color:white;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  font-size:32px;
-}
-
 button{
+  position:fixed;
+  bottom:10px;
   font-size:20px;
-  margin:5px;
   padding:10px;
 }
+
+#leftBtn{left:10px;}
+#jumpBtn{left:80px;}
+#rightBtn{left:150px;}
 </style>
 </head>
 
 <body>
 
 <div id="hud">
-❤️ Lives: <span id="lives">5</span><br>
-⭐ Score: <span id="score">0</span><br>
-🧭 Level: <span id="level">1</span>
+Lives: <span id="lives">3</span> |
+Level: <span id="level">1</span>
 </div>
 
-<!-- CONTROLS -->
-<button onmousedown="keys.left=true" onmouseup="keys.left=false">⬅️</button>
-<button onclick="jump()">⤴️</button>
-<button onmousedown="keys.right=true" onmouseup="keys.right=false">➡️</button>
+<button id="leftBtn">⬅️</button>
+<button id="jumpBtn">⤴️</button>
+<button id="rightBtn">➡️</button>
 
 <div id="player"></div>
 <div id="flag"></div>
-<div id="checkpoint"></div>
 <div id="ground"></div>
 
-<div id="gameover">
-💀 GAME OVER 💀<br><br>
-<button onclick="restartGame()">Restart</button>
-</div>
-
 <script>
+/* ========= VARIABLES ========= */
 const player=document.getElementById("player");
 const flag=document.getElementById("flag");
-const checkpoint=document.getElementById("checkpoint");
-const gameover=document.getElementById("gameover");
-
 const livesText=document.getElementById("lives");
-const scoreText=document.getElementById("score");
 const levelText=document.getElementById("level");
 
-let spawnX=100, spawnY=50;
-let x=spawnX, y=spawnY;
-let velY=0, onGround=true;
+let x=100,y=50;
+let velY=0;
+let onGround=true;
 
-let lives=5, score=0, level=1;
-let enemies=[], lavas=[];
+let lives=3;
+let level=1;
+
+let moveLeft=false;
+let moveRight=false;
 
 const gravity=1;
-const jumpPower=16;
 const speed=5;
+const jumpPower=16;
 
-const keys={left:false,right:false};
+/* ========= CONTROLS ========= */
+// Disable scrolling
+window.addEventListener("keydown",e=>e.preventDefault());
 
-// ⌨️ KEYBOARD
+// Keyboard
 window.addEventListener("keydown",e=>{
-  if(e.key==="ArrowLeft") keys.left=true;
-  if(e.key==="ArrowRight") keys.right=true;
-  if(e.key===" ") jump();
+  if(e.key==="ArrowLeft"||e.key==="a") moveLeft=true;
+  if(e.key==="ArrowRight"||e.key==="d") moveRight=true;
+  if(e.key===" "||e.key==="ArrowUp") jump();
 });
 
 window.addEventListener("keyup",e=>{
-  if(e.key==="ArrowLeft") keys.left=false;
-  if(e.key==="ArrowRight") keys.right=false;
+  if(e.key==="ArrowLeft"||e.key==="a") moveLeft=false;
+  if(e.key==="ArrowRight"||e.key==="d") moveRight=false;
 });
 
-// COLLISION
-function hit(a,b){
-  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
-}
+// Buttons
+leftBtn.onmousedown=()=>moveLeft=true;
+leftBtn.onmouseup=()=>moveLeft=false;
+rightBtn.onmousedown=()=>moveRight=true;
+rightBtn.onmouseup=()=>moveRight=false;
+jumpBtn.onclick=jump;
 
-// JUMP
+/* ========= FUNCTIONS ========= */
 function jump(){
   if(onGround){
     velY=jumpPower;
@@ -161,119 +141,56 @@ function jump(){
   }
 }
 
-// RESET LEVEL
+function hit(a,b){
+  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+}
+
 function resetLevel(){
-  x=spawnX; y=spawnY; velY=0;
-
-  enemies.forEach(e=>e.remove());
-  lavas.forEach(l=>l.remove());
-  enemies=[]; lavas=[];
-
-  // enemies
-  for(let i=0;i<level;i++){
-    const e=document.createElement("div");
-    e.className="enemy";
-    e.style.left=(300+i*200)+"px";
-    e.dir=1;
-    document.body.appendChild(e);
-    enemies.push(e);
-  }
-
-  // lava
-  for(let i=0;i<level;i++){
-    const l=document.createElement("div");
-    l.className="lava";
-    l.style.left=(200+i*300)+"px";
-    l.style.width="120px";
-    document.body.appendChild(l);
-    lavas.push(l);
-  }
-
-  checkpoint.style.left="500px";
-  checkpoint.style.background="blue";
+  x=100;
+  y=50;
+  velY=0;
   flag.style.left=(innerWidth-60)+"px";
 }
 
-// RESTART GAME
-function restartGame(){
-  lives=5;
-  score=0;
-  level=1;
-  spawnX=100;
-  gameover.style.display="none";
-  resetLevel();
-}
-
-resetLevel();
-
-// GAME LOOP
+/* ========= GAME LOOP ========= */
 function loop(){
-  if(keys.left) x-=speed;
-  if(keys.right) x+=speed;
+  // Movement
+  if(moveLeft) x-=speed;
+  if(moveRight) x+=speed;
 
+  // Gravity
   velY-=gravity;
   y+=velY;
-  if(y<=50){ y=50; velY=0; onGround=true; }
 
-  const p={left:x,right:x+40,top:y+60,bottom:y};
-
-  // LAVA
-  lavas.forEach(l=>{
-    const lx=parseInt(l.style.left);
-    const lb={left:lx,right:lx+120,top:70,bottom:50};
-    if(hit(p,lb)){
-      lives--;
-      resetLevel();
-    }
-  });
-
-  // ENEMIES
-  enemies.forEach(e=>{
-    let ex=parseInt(e.style.left);
-    ex+=e.dir*2;
-    if(ex<100||ex>innerWidth-100) e.dir*=-1;
-    e.style.left=ex+"px";
-
-    const eb={left:ex,right:ex+40,top:90,bottom:50};
-    if(hit(p,eb)){
-      lives--;
-      resetLevel();
-    }
-  });
-
-  // CHECKPOINT
-  const cx=parseInt(checkpoint.style.left);
-  const cb={left:cx,right:cx+30,top:80,bottom:50};
-  if(hit(p,cb)){
-    spawnX=cx;
-    checkpoint.style.background="lightblue";
+  if(y<=50){
+    y=50;
+    velY=0;
+    onGround=true;
   }
 
-  // FLAG → NEXT LEVEL
-  const fx=parseInt(flag.style.left);
-  const fb={left:fx,right:fx+30,top:110,bottom:50};
-  if(hit(p,fb)){
+  // Player box
+  const p={left:x,right:x+40,top:y+60,bottom:y};
+
+  // Flag
+  const fx=parseInt(flag.style.left)||innerWidth-60;
+  const f={left:fx,right:fx+30,top:110,bottom:50};
+
+  if(hit(p,f)){
     level++;
-    score+=500;
-    spawnX=100;
+    levelText.textContent=level;
     resetLevel();
   }
 
-  // GAME OVER
-  if(lives<=0){
-    gameover.style.display="flex";
-    return;
-  }
-
+  // Apply position
   player.style.left=x+"px";
   player.style.bottom=y+"px";
 
   livesText.textContent=lives;
-  scoreText.textContent=score;
-  levelText.textContent=level;
 
   requestAnimationFrame(loop);
 }
+
+resetLevel();
 loop();
 </script>
 
