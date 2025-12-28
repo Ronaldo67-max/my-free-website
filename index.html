@@ -1,51 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Moving Game</title>
+  <title>Jump Game</title>
+
   <style>
     body {
       margin: 0;
-      background: #ddd;
       overflow: hidden;
+      background: #cce7ff;
+    }
+
+    #ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 50px;
+      background: #4caf50;
     }
 
     #player {
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 70px;
       background: blue;
       position: absolute;
       left: 100px;
-      top: 100px;
+      bottom: 50px;
     }
   </style>
 </head>
 
-<body>
+<body tabindex="0">
 
   <div id="player"></div>
+  <div id="ground"></div>
 
   <script>
     const player = document.getElementById("player");
-    let x = 100;
-    let y = 100;
 
-    // CLICK THE PAGE FIRST
-    document.body.tabIndex = 0;
+    let x = 100;
+    let y = 50;
+    let velocityY = 0;
+    let isJumping = false;
+
+    const gravity = 1;
+    const jumpPower = 18;
+    const groundLevel = 50;
+
+    // MAKE SURE KEYBOARD WORKS
     document.body.focus();
 
-    document.addEventListener("keydown", function (e) {
-      console.log("Key pressed:", e.key); // DEBUG
+    function gameLoop() {
+      // gravity
+      velocityY -= gravity;
+      y += velocityY;
 
-      if (e.key === "ArrowRight") x += 10;
-      if (e.key === "ArrowLeft")  x -= 10;
-      if (e.key === "ArrowDown")  y += 10;
-      if (e.key === "ArrowUp")    y -= 10;
+      // ground collision
+      if (y <= groundLevel) {
+        y = groundLevel;
+        velocityY = 0;
+        isJumping = false;
+      }
 
       player.style.left = x + "px";
-      player.style.top  = y + "px";
+      player.style.bottom = y + "px";
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "ArrowRight") x += 6;
+      if (e.key === "ArrowLeft")  x -= 6;
+
+      if (e.key === " " && !isJumping) {
+        velocityY = jumpPower;
+        isJumping = true;
+      }
     });
+
+    gameLoop();
   </script>
 
 </body>
 </html>
-
