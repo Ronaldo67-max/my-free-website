@@ -25,20 +25,18 @@ body{
 /* LAVA */
 #lava{
   position:absolute;
-  width:200px;
+  width:80px;          /* 🔥 SHORTER LAVA */
   height:25px;
   background:orange;
-  left:300px;
   bottom:50px;
 }
 
 /* FLAG */
 #flag{
   position:absolute;
-  width:60px;
+  width:40px;
   height:80px;
   background:gold;
-  left:650px;
   bottom:50px;
 }
 
@@ -92,7 +90,7 @@ let level = 1;
 let left = false;
 let right = false;
 
-const gravity = 0.8;
+const gravity = 0.9;
 const speed = 5;
 const jumpPower = 15;
 
@@ -100,7 +98,7 @@ const jumpPower = 15;
 document.addEventListener("keydown", e=>{
   if(e.key === "ArrowLeft") left = true;
   if(e.key === "ArrowRight") right = true;
-  if(e.key === " ") jump();
+  if(e.key === " " || e.key === "ArrowUp") jump();
 });
 
 document.addEventListener("keyup", e=>{
@@ -120,6 +118,15 @@ function rect(el){
   return el.getBoundingClientRect();
 }
 
+function collide(a,b){
+  return !(
+    a.right < b.left ||
+    a.left > b.right ||
+    a.bottom < b.top ||
+    a.top > b.bottom
+  );
+}
+
 function die(){
   lives--;
   if(lives <= 0){
@@ -135,15 +142,19 @@ function reset(){
   y = 50;
   velY = 0;
 
-  lava.style.left = (300 + level * 40) + "px";
-  flag.style.left = (600 + level * 50) + "px";
+  /* LEVEL SCALING */
+  lava.style.left = (250 + level * 60) + "px";
+  lava.style.width = (60 + level * 10) + "px"; // 🔥 grows slowly
+  flag.style.left = (500 + level * 80) + "px";
 }
 
 /* ===== GAME LOOP ===== */
 function loop(){
+  /* Movement */
   if(left) x -= speed;
   if(right) x += speed;
 
+  /* Gravity */
   velY -= gravity;
   y += velY;
 
@@ -153,20 +164,22 @@ function loop(){
     onGround = true;
   }
 
+  /* Apply position */
   player.style.left = x + "px";
   player.style.bottom = y + "px";
 
+  /* Collisions */
   const p = rect(player);
   const l = rect(lava);
   const f = rect(flag);
 
-  // Lava = death
-  if(!(p.right < l.left || p.left > l.right || p.bottom < l.top || p.top > l.bottom)){
+  /* Lava = death */
+  if(collide(p,l)){
     die();
   }
 
-  // Flag = next level
-  if(!(p.right < f.left || p.left > f.right || p.bottom < f.top || p.top > f.bottom)){
+  /* Flag = next level */
+  if(collide(p,f)){
     level++;
     reset();
   }
@@ -184,4 +197,3 @@ loop();
 
 </body>
 </html>
-
