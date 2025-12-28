@@ -1,94 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Platform Game</title>
-
+  <title>Moving Game</title>
   <style>
     body {
       margin: 0;
+      background: #ddd;
       overflow: hidden;
-      background: #87ceeb;
-    }
-
-    #ground {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 50px;
-      background: #3cb371;
     }
 
     #player {
-      width: 48px;
-      height: 48px;
+      width: 60px;
+      height: 60px;
+      background: blue;
       position: absolute;
-      left: 50px;
-      bottom: 50px;
-
-      /* COLOR ANIMATION (WORKS WITHOUT IMAGES) */
-      background: red;
-
-      transition: background 0.1s;
+      left: 100px;
+      top: 100px;
     }
-
-    /* WALKING ANIMATION */
-    .walk1 { background: #ff4d4d; }
-    .walk2 { background: #ff9999; }
-    .idle  { background: red; }
   </style>
 </head>
 
 <body>
 
-  <div id="player" class="idle"></div>
-  <div id="ground"></div>
+  <div id="player"></div>
 
   <script>
-    let x = 50;
-    let y = 50;
-    let velocityY = 0;
-    let isJumping = false;
-    let walkingFrame = 0;
-    let moving = false;
-
-    const gravity = 1;
-    const jumpPower = 18;
-    const groundLevel = 50;
-
     const player = document.getElementById("player");
+    let x = 100;
+    let y = 100;
 
-    function gameLoop() {
-      // Gravity
-      velocityY -= gravity;
-      y += velocityY;
+    // CLICK THE PAGE FIRST
+    document.body.tabIndex = 0;
+    document.body.focus();
 
-      if (y <= groundLevel) {
-        y = groundLevel;
-        velocityY = 0;
-        isJumping = false;
-      }
+    document.addEventListener("keydown", function (e) {
+      console.log("Key pressed:", e.key); // DEBUG
 
-      // Walking animation
-      if (moving && !isJumping) {
-        walkingFrame++;
-        if (walkingFrame % 20 < 10) {
-          player.className = "walk1";
-        } else {
-          player.className = "walk2";
-        }
-      } else if (!isJumping) {
-        player.className = "idle";
-      }
+      if (e.key === "ArrowRight") x += 10;
+      if (e.key === "ArrowLeft")  x -= 10;
+      if (e.key === "ArrowDown")  y += 10;
+      if (e.key === "ArrowUp")    y -= 10;
 
       player.style.left = x + "px";
-      player.style.bottom = y + "px";
+      player.style.top  = y + "px";
+    });
+  </script>
 
-      moving = false;
-      requestAnimationFrame(gameLoop);
-    }
+</body>
+</html>
 
-    document.addEventListener("keydown", function(e) {
-      if (e.key === "ArrowRight") {
-        x += 5;
-        moving = true;
-      }
