@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>My Game</title>
+<title>Platformer Game</title>
 <style>
 body{
   margin:0;
@@ -10,22 +10,41 @@ body{
   font-family:Arial;
 }
 
-#player{position:absolute;width:40px;height:60px;background:red;bottom:50px;}
-.enemy{position:absolute;width:40px;height:40px;background:purple;bottom:50px;}
-.bullet{position:absolute;width:10px;height:5px;background:black;}
+#player{
+  position:absolute;
+  width:40px;
+  height:60px;
+  background:red;
+  bottom:50px;
+}
 
-#flag{position:absolute;width:30px;height:60px;background:gold;bottom:50px;}
+.enemy{
+  position:absolute;
+  width:40px;
+  height:40px;
+  background:purple;
+  bottom:50px;
+}
+
+#flag{
+  position:absolute;
+  width:30px;
+  height:60px;
+  background:gold;
+  bottom:50px;
+}
+
 .lava{
   position:absolute;
   height:20px;
-  background:linear-gradient(red, orange, yellow);
+  background:linear-gradient(red,orange,yellow);
   bottom:50px;
-  animation: lavaMove 0.5s infinite alternate;
+  animation: lava 0.4s infinite alternate;
 }
 
-@keyframes lavaMove{
+@keyframes lava{
   from{filter:brightness(1);}
-  to{filter:brightness(1.5);}
+  to{filter:brightness(1.4);}
 }
 
 #checkpoint{
@@ -36,7 +55,13 @@ body{
   bottom:50px;
 }
 
-#ground{position:absolute;bottom:0;width:100%;height:50px;background:green;}
+#ground{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:50px;
+  background:green;
+}
 
 #hud{
   position:fixed;
@@ -57,7 +82,11 @@ body{
   font-size:32px;
 }
 
-button{font-size:20px;margin:5px;padding:10px;}
+button{
+  font-size:20px;
+  margin:5px;
+  padding:10px;
+}
 </style>
 </head>
 
@@ -69,9 +98,10 @@ button{font-size:20px;margin:5px;padding:10px;}
 🧭 Level: <span id="level">1</span>
 </div>
 
-<button onclick="keys.ArrowLeft=true">⬅️</button>
+<!-- CONTROLS -->
+<button onmousedown="keys.left=true" onmouseup="keys.left=false">⬅️</button>
 <button onclick="jump()">⤴️</button>
-<button onclick="keys.ArrowRight=true">➡️</button>
+<button onmousedown="keys.right=true" onmouseup="keys.right=false">➡️</button>
 
 <div id="player"></div>
 <div id="flag"></div>
@@ -79,8 +109,8 @@ button{font-size:20px;margin:5px;padding:10px;}
 <div id="ground"></div>
 
 <div id="gameover">
-  💀 GAME OVER 💀<br><br>
-  <button onclick="restartGame()">Restart</button>
+💀 GAME OVER 💀<br><br>
+<button onclick="restartGame()">Restart</button>
 </div>
 
 <script>
@@ -93,28 +123,51 @@ const livesText=document.getElementById("lives");
 const scoreText=document.getElementById("score");
 const levelText=document.getElementById("level");
 
-let spawnX=100,spawnY=50;
-let x=spawnX,y=spawnY,velY=0,onGround=true;
-let lives=5,score=0,level=1;
-let enemies=[],lavas=[];
-const keys={};
+let spawnX=100, spawnY=50;
+let x=spawnX, y=spawnY;
+let velY=0, onGround=true;
 
-const gravity=1,jumpPower=16,speed=5;
+let lives=5, score=0, level=1;
+let enemies=[], lavas=[];
 
+const gravity=1;
+const jumpPower=16;
+const speed=5;
+
+const keys={left:false,right:false};
+
+// ⌨️ KEYBOARD
+window.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft") keys.left=true;
+  if(e.key==="ArrowRight") keys.right=true;
+  if(e.key===" ") jump();
+});
+
+window.addEventListener("keyup",e=>{
+  if(e.key==="ArrowLeft") keys.left=false;
+  if(e.key==="ArrowRight") keys.right=false;
+});
+
+// COLLISION
 function hit(a,b){
   return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
 }
 
+// JUMP
 function jump(){
-  if(onGround){velY=jumpPower;onGround=false;}
+  if(onGround){
+    velY=jumpPower;
+    onGround=false;
+  }
 }
 
+// RESET LEVEL
 function resetLevel(){
-  x=spawnX;y=spawnY;velY=0;
+  x=spawnX; y=spawnY; velY=0;
 
   enemies.forEach(e=>e.remove());
   lavas.forEach(l=>l.remove());
-  enemies=[];lavas=[];
+  enemies=[]; lavas=[];
 
   // enemies
   for(let i=0;i<level;i++){
@@ -126,23 +179,22 @@ function resetLevel(){
     enemies.push(e);
   }
 
-  // lava pits
+  // lava
   for(let i=0;i<level;i++){
-    const lava=document.createElement("div");
-    lava.className="lava";
-    lava.style.left=(200+i*300)+"px";
-    lava.style.width="120px";
-    document.body.appendChild(lava);
-    lavas.push(lava);
+    const l=document.createElement("div");
+    l.className="lava";
+    l.style.left=(200+i*300)+"px";
+    l.style.width="120px";
+    document.body.appendChild(l);
+    lavas.push(l);
   }
 
-  // checkpoint
   checkpoint.style.left="500px";
-
-  // flag
+  checkpoint.style.background="blue";
   flag.style.left=(innerWidth-60)+"px";
 }
 
+// RESTART GAME
 function restartGame(){
   lives=5;
   score=0;
@@ -154,17 +206,18 @@ function restartGame(){
 
 resetLevel();
 
+// GAME LOOP
 function loop(){
-  if(keys.ArrowLeft) x-=speed;
-  if(keys.ArrowRight) x+=speed;
+  if(keys.left) x-=speed;
+  if(keys.right) x+=speed;
 
   velY-=gravity;
   y+=velY;
-  if(y<=50){y=50;velY=0;onGround=true;}
+  if(y<=50){ y=50; velY=0; onGround=true; }
 
   const p={left:x,right:x+40,top:y+60,bottom:y};
 
-  // 🔥 LAVA
+  // LAVA
   lavas.forEach(l=>{
     const lx=parseInt(l.style.left);
     const lb={left:lx,right:lx+120,top:70,bottom:50};
@@ -174,7 +227,7 @@ function loop(){
     }
   });
 
-  // 👹 MOVING ENEMIES
+  // ENEMIES
   enemies.forEach(e=>{
     let ex=parseInt(e.style.left);
     ex+=e.dir*2;
@@ -188,7 +241,7 @@ function loop(){
     }
   });
 
-  // 🔵 CHECKPOINT
+  // CHECKPOINT
   const cx=parseInt(checkpoint.style.left);
   const cb={left:cx,right:cx+30,top:80,bottom:50};
   if(hit(p,cb)){
@@ -196,7 +249,7 @@ function loop(){
     checkpoint.style.background="lightblue";
   }
 
-  // 🏁 FLAG
+  // FLAG → NEXT LEVEL
   const fx=parseInt(flag.style.left);
   const fb={left:fx,right:fx+30,top:110,bottom:50};
   if(hit(p,fb)){
@@ -206,7 +259,7 @@ function loop(){
     resetLevel();
   }
 
-  // ☠️ GAME OVER
+  // GAME OVER
   if(lives<=0){
     gameover.style.display="flex";
     return;
