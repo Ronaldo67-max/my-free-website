@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My First Game</title>
+  <title>My Game</title>
   <style>
     body {
       margin: 0;
@@ -26,19 +26,29 @@
       background: green;
     }
 
-    #hint {
+    #text {
       position: fixed;
       top: 10px;
       left: 10px;
-      color: black;
       font-family: Arial;
       font-size: 16px;
     }
   </style>
 </head>
 
-<body tabindex="0">
+<body>
 
-  <div id="hint">Click the screen, then use ⬅️ ➡️ and SPACE</div>
+  <div id="text">Use ⬅️ ➡️ and SPACE</div>
   <div id="player"></div>
   <div id="ground"></div>
+
+  <script>
+    const player = document.getElementById("player");
+
+    let x = 100;
+    let y = 50;
+    let velocityY = 0;
+    let onGround = true;
+
+    co
+
