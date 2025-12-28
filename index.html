@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ACTUALLY WORKING PLATFORMER</title>
+<meta charset="UTF-8">
+<title>WORKING GAME FINAL</title>
+
 <style>
 body{
   margin:0;
@@ -10,6 +12,7 @@ body{
   font-family:Arial;
 }
 
+/* PLAYER */
 #player{
   position:absolute;
   width:40px;
@@ -19,30 +22,27 @@ body{
   bottom:50px;
 }
 
-.enemy{
+/* LAVA */
+#lava{
   position:absolute;
-  width:40px;
-  height:40px;
-  background:purple;
-  bottom:50px;
-}
-
-.lava{
-  position:absolute;
-  width:150px;
+  width:200px;
   height:25px;
-  background:orangered;
+  background:orange;
+  left:300px;
   bottom:50px;
 }
 
+/* FLAG */
 #flag{
   position:absolute;
-  width:50px;
+  width:60px;
   height:80px;
   background:gold;
+  left:650px;
   bottom:50px;
 }
 
+/* GROUND */
 #ground{
   position:absolute;
   bottom:0;
@@ -51,6 +51,7 @@ body{
   background:green;
 }
 
+/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -58,6 +59,7 @@ body{
   font-size:20px;
 }
 
+/* BUTTONS */
 #controls{
   position:fixed;
   bottom:10px;
@@ -65,7 +67,7 @@ body{
   transform:translateX(-50%);
 }
 button{
-  font-size:24px;
+  font-size:26px;
   padding:15px;
 }
 </style>
@@ -85,155 +87,121 @@ Level: <span id="level">1</span>
 </div>
 
 <div id="player"></div>
+<div id="lava"></div>
 <div id="flag"></div>
 <div id="ground"></div>
 
 <script>
-/* ===== CORE ===== */
-const player=document.getElementById("player");
-const flag=document.getElementById("flag");
-const livesText=document.getElementById("lives");
-const levelText=document.getElementById("level");
+/* ===== VARIABLES ===== */
+const player = document.getElementById("player");
+const lava = document.getElementById("lava");
+const flag = document.getElementById("flag");
+const livesText = document.getElementById("lives");
+const levelText = document.getElementById("level");
 
-let x=100,y=50;
-let velY=0,onGround=true;
-let lives=3,level=1;
+let x = 100;
+let y = 50;
+let velY = 0;
+let onGround = true;
 
-let left=false,right=false;
+let lives = 3;
+let level = 1;
 
-let enemies=[],lavas=[];
+let goLeft = false;
+let goRight = false;
 
-const gravity=1;
-const speed=5;
-const jumpPower=16;
+const gravity = 1;
+const speed = 5;
+const jumpPower = 15;
 
 /* ===== CONTROLS ===== */
-window.addEventListener("keydown",e=>{
-  if(e.key==="ArrowLeft") left=true;
-  if(e.key==="ArrowRight") right=true;
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft") goLeft = true;
+  if(e.key==="ArrowRight") goRight = true;
   if(e.key===" ") jump();
 });
-window.addEventListener("keyup",e=>{
-  if(e.key==="ArrowLeft") left=false;
-  if(e.key==="ArrowRight") right=false;
+
+document.addEventListener("keyup", e=>{
+  if(e.key==="ArrowLeft") goLeft = false;
+  if(e.key==="ArrowRight") goRight = false;
 });
 
-left.onmousedown=()=>left=true;
-left.onmouseup=()=>left=false;
-left.ontouchstart=()=>left=true;
-left.ontouchend=()=>left=false;
+left.onmousedown = ()=> goLeft = true;
+left.onmouseup = ()=> goLeft = false;
+left.ontouchstart = ()=> goLeft = true;
+left.ontouchend = ()=> goLeft = false;
 
-right.onmousedown=()=>right=true;
-right.onmouseup=()=>right=false;
-right.ontouchstart=()=>right=true;
-right.ontouchend=()=>right=false;
+right.onmousedown = ()=> goRight = true;
+right.onmouseup = ()=> goRight = false;
+right.ontouchstart = ()=> goRight = true;
+right.ontouchend = ()=> goRight = false;
 
-jump.onclick=jump;
-jump.ontouchstart=jump;
+jump.onclick = jump;
+jump.ontouchstart = jump;
 
 /* ===== FUNCTIONS ===== */
 function jump(){
   if(onGround){
-    velY=jumpPower;
-    onGround=false;
+    velY = jumpPower;
+    onGround = false;
   }
 }
 
-function hit(a,b){
-  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+function box(el){
+  return el.getBoundingClientRect();
 }
 
 function die(){
   lives--;
-  if(lives<=0){
+  alert("YOU DIED");
+  if(lives <= 0){
     alert("GAME OVER");
-    lives=3;
-    level=1;
+    lives = 3;
+    level = 1;
   }
-  resetLevel();
+  reset();
 }
 
-function resetLevel(){
-  enemies.forEach(e=>e.remove());
-  lavas.forEach(l=>l.remove());
-  enemies=[];
-  lavas=[];
+function reset(){
+  x = 100;
+  y = 50;
+  velY = 0;
 
-  x=100;
-  y=50;
-  velY=0;
-
-  // FLAG
-  flag.style.left=(innerWidth-80)+"px";
-
-  // ENEMY
-  let e=document.createElement("div");
-  e.className="enemy";
-  e.x=300;
-  e.style.left=e.x+"px";
-  document.body.appendChild(e);
-  enemies.push(e);
-
-  // LAVA
-  let l=document.createElement("div");
-  l.className="lava";
-  l.x=500;
-  l.style.left=l.x+"px";
-  document.body.appendChild(l);
-  lavas.push(l);
+  lava.style.left = (300 + level*30) + "px";
+  flag.style.left = (600 + level*20) + "px";
 }
 
-/* ===== LOOP ===== */
+/* ===== GAME LOOP ===== */
 function loop(){
-  if(left) x-=speed;
-  if(right) x+=speed;
+  if(goLeft) x -= speed;
+  if(goRight) x += speed;
 
-  velY-=gravity;
-  y+=velY;
+  velY -= gravity;
+  y += velY;
 
-  if(y<=50){
-    y=50;
-    velY=0;
-    onGround=true;
+  if(y <= 50){
+    y = 50;
+    velY = 0;
+    onGround = true;
   }
 
-  let p={left:x,right:x+40,top:y+60,bottom:y};
+  player.style.left = x + "px";
+  player.style.bottom = y + "px";
 
-  // ENEMY DEATH
-  enemies.forEach(e=>{
-    let eb={left:e.x,right:e.x+40,top:90,bottom:50};
-    if(hit(p,eb)) die();
-  });
+  // COLLISIONS (REAL DOM COLLISION)
+  const p = box(player);
+  const l = box(lava);
+  const f = box(flag);
 
-  // LAVA DEATH
-  lavas.forEach(l=>{
-    let lb={left:l.x,right:l.x+150,top:80,bottom:50};
-    if(hit(p,lb)) die();
-  });
+  if(!(p.right < l.left || p.left > l.right || p.bottom < l.top || p.top > l.bottom)){
+    die();
+  }
 
-  // FLAG = NEXT LEVEL (BIG HITBOX)
-  let fx=parseInt(flag.style.left);
-  let fb={left:fx-20,right:fx+80,top:140,bottom:50};
-  if(hit(p,fb)){
+  if(!(p.right < f.left || p.left > f.right || p.bottom < f.top || p.top > f.bottom)){
     level++;
-    resetLevel();
+    alert("LEVEL UP!");
+    reset();
   }
 
-  player.style.left=x+"px";
-  player.style.bottom=y+"px";
-
-  livesText.textContent=lives;
-  levelText.textContent=level;
-
-  requestAnimationFrame(loop);
-}
-
-/* ===== START ===== */
-resetLevel();
-loop();
-</script>
-
-</body>
-</html>
-
-
+  livesText.textContent = lives;
+  levelText.textContent = leve
