@@ -57,7 +57,6 @@ html,body{
   position:fixed;
   top:10px;
   left:10px;
-  color:black;
   font-size:16px;
 }
 
@@ -90,30 +89,23 @@ Level: <span id="level">1</span>
 <div id="ground"></div>
 
 <script>
-/* ========= VARIABLES ========= */
+/* ===== VARIABLES ===== */
 const player=document.getElementById("player");
 const flag=document.getElementById("flag");
 const livesText=document.getElementById("lives");
 const levelText=document.getElementById("level");
 
-let x=100,y=50;
-let velY=0;
-let onGround=true;
+let x=100,y=50,velY=0,onGround=true;
+let lives=3,level=1;
 
-let lives=3;
-let level=1;
-
-let moveLeft=false;
-let moveRight=false;
+let moveLeft=false,moveRight=false;
+let enemies=[],lavas=[];
 
 const gravity=1;
 const speed=5;
 const jumpPower=16;
 
-/* ========= CONTROLS ========= */
-// Disable scrolling
-window.addEventListener("keydown",e=>e.preventDefault());
-
+/* ===== CONTROLS ===== */
 // Keyboard
 window.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft"||e.key==="a") moveLeft=true;
@@ -133,7 +125,7 @@ rightBtn.onmousedown=()=>moveRight=true;
 rightBtn.onmouseup=()=>moveRight=false;
 jumpBtn.onclick=jump;
 
-/* ========= FUNCTIONS ========= */
+/* ===== FUNCTIONS ===== */
 function jump(){
   if(onGround){
     velY=jumpPower;
@@ -146,46 +138,101 @@ function hit(a,b){
 }
 
 function resetLevel(){
+  // Clear old stuff
+  enemies.forEach(e=>e.remove());
+  lavas.forEach(l=>l.remove());
+  enemies=[];
+  lavas=[];
+
+  // Reset player
   x=100;
   y=50;
   velY=0;
+
+  // Flag
   flag.style.left=(innerWidth-60)+"px";
+
+  // Enemies
+  for(let i=0;i<level;i++){
+    const e=document.createElement("div");
+    e.className="enemy";
+    e.x=300+i*200;
+    e.dir=1;
+    e.style.left=e.x+"px";
+    document.body.appendChild(e);
+    enemies.push(e);
+  }
+
+  // Lava
+  for(let i=0;i<level;i++){
+    const l=document.createElement("div");
+    l.className="lava";
+    l.x=200+i*300;
+    l.style.left=l.x+"px";
+    document.body.appendChild(l);
+    lavas.push(l);
+  }
 }
 
-/* ========= GAME LOOP ========= */
+/* ===== GAME LOOP ===== */
 function loop(){
-  // Movement
+  // Move
   if(moveLeft) x-=speed;
   if(moveRight) x+=speed;
+
+  // Screen bounds
+  x=Math.max(0,Math.min(innerWidth-40,x));
 
   // Gravity
   velY-=gravity;
   y+=velY;
+  if(y<=50){y=50;velY=0;onGround=true;}
 
-  if(y<=50){
-    y=50;
-    velY=0;
-    onGround=true;
-  }
-
-  // Player box
   const p={left:x,right:x+40,top:y+60,bottom:y};
 
-  // Flag
-  const fx=parseInt(flag.style.left)||innerWidth-60;
-  const f={left:fx,right:fx+30,top:110,bottom:50};
+  // Enemies
+  enemies.forEach(e=>{
+    e.x+=e.dir*2;
+    if(e.x<100||e.x>innerWidth-100) e.dir*=-1;
+    e.style.left=e.x+"px";
 
-  if(hit(p,f)){
+    const eb={left:e.x,right:e.x+40,top:90,bottom:50};
+    if(hit(p,eb)){
+      lives--;
+      resetLevel();
+    }
+  });
+
+  // Lava
+  lavas.forEach(l=>{
+    const lb={left:l.x,right:l.x+120,top:70,bottom:50};
+    if(hit(p,lb)){
+      lives--;
+      resetLevel();
+    }
+  });
+
+  // Flag
+  const fx=parseInt(flag.style.left);
+  const fb={left:fx,right:fx+30,top:110,bottom:50};
+  if(hit(p,fb)){
     level++;
-    levelText.textContent=level;
     resetLevel();
   }
 
-  // Apply position
+  // Game over
+  if(lives<=0){
+    alert("GAME OVER");
+    lives=3;
+    level=1;
+    resetLevel();
+  }
+
+  // Draw
   player.style.left=x+"px";
   player.style.bottom=y+"px";
-
   livesText.textContent=lives;
+  levelText.textContent=level;
 
   requestAnimationFrame(loop);
 }
