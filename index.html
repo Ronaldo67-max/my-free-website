@@ -1,54 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Game</title>
-  <style>
-    body {
-      margin: 0;
-      background: #87ceeb;
-      overflow: hidden;
-    }
-
-    #player {
-      position: absolute;
-      width: 40px;
-      height: 60px;
-      background: red;
-      left: 100px;
-      bottom: 50px;
-    }
-
-    #ground {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 50px;
-      background: green;
-    }
-
-    #text {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      font-family: Arial;
-      font-size: 16px;
-    }
-  </style>
+  <title>JS Test</title>
 </head>
-
 <body>
 
-  <div id="text">Use ⬅️ ➡️ and SPACE</div>
-  <div id="player"></div>
-  <div id="ground"></div>
+  <h1 id="text">If this changes, JS works</h1>
+  <button onclick="alert('JavaScript works!')">CLICK ME</button>
 
   <script>
-    const player = document.getElementById("player");
+    document.getElementById("text").textContent = "JavaScript IS RUNNING 🎉";
+  </script>
 
-    let x = 100;
-    let y = 50;
-    let velocityY = 0;
-    let onGround = true;
-
-    co
-
+</body>
+</html>
