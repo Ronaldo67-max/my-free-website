@@ -1,170 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Full Platform Game</title>
-
+  <title>My Game</title>
   <style>
     body {
       margin: 0;
-      overflow: hidden;
       background: #87ceeb;
-      font-family: Arial, sans-serif;
-    }
-
-    #game {
-      position: relative;
-      width: 3000px;
-      height: 600px;
-    }
-
-    #camera {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 600px;
       overflow: hidden;
     }
 
     #player {
-      position: absolute;
       width: 40px;
       height: 60px;
       background: red;
-      bottom: 100px;
+      position: absolute;
       left: 100px;
+      bottom: 50px;
     }
 
-    .walk1 { background: #ff6666; }
-    .walk2 { background: #ff3333; }
-
-    .platform {
+    #ground {
       position: absolute;
-      background: #4caf50;
-      height: 20px;
-    }
-
-    .coin {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: gold;
-      border-radius: 50%;
-    }
-
-    .enemy {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-      background: purple;
-    }
-
-    #hud {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-size: 20px;
-      z-index: 100;
+      bottom: 0;
+      height: 50px;
+      width: 100%;
+      background: green;
     }
   </style>
 </head>
 
 <body tabindex="0">
 
-<div id="hud">Score: <span id="score">0</span></div>
+  <div id="player"></div>
+  <div id="ground"></div>
 
-<div id="camera">
-  <div id="game">
+  <script>
+    const player = document.getElementById("player");
 
-    <div id="player"></div>
+    let x = 100;
+    let y = 50;
+    let velocityY = 0;
+    let onGround = true;
 
-    <!-- PLATFORMS -->
-    <div class="platform" style="width:3000px; bottom:80px; left:0"></div>
-    <div class="platform" style="width:200px; bottom:200px; left:400px"></div>
-    <div class="platform" style="width:200px; bottom:300px; left:800px"></div>
-    <div class="platform" style="width:200px; bottom:250px; left:1200px"></div>
+    const gravity = 1;
+    const jumpPower = 16;
+    const speed = 5;
 
-    <!-- COINS -->
-    <div class="coin" style="left:450px; bottom:230px"></div>
-    <div class="coin" style="left:850px; bottom:330px"></div>
-    <div class="coin" style="left:1250px; bottom:280px"></div>
+    document.body.focus();
 
-    <!-- ENEMY -->
-    <div class="enemy" style="left:1000px; bottom:120px"></div>
-
-  </div>
-</div>
-
-<script>
-  const player = document.getElementById("player");
-  const game = document.getElementById("game");
-  const coins = document.querySelectorAll(".coin");
-  const enemies = document.querySelectorAll(".enemy");
-  const scoreText = document.getElementById("score");
-
-  let x = 100;
-  let y = 100;
-  let velY = 0;
-  let onGround = false;
-  let score = 0;
-  let walkFrame = 0;
-
-  const gravity = 1;
-  const jumpPower = 18;
-  const speed = 6;
-
-  document.body.focus();
-
-  function rectsTouch(a, b) {
-    return (
-      a.left < b.right &&
-      a.right > b.left &&
-      a.bottom > b.top &&
-      a.top < b.bottom
-    );
-  }
-
-  function gameLoop() {
-    velY -= gravity;
-    y += velY;
-
-    onGround = false;
-
-    document.querySelectorAll(".platform").forEach(p => {
-      const pRect = p.getBoundingClientRect();
-      const plRect = player.getBoundingClientRect();
-
-      if (rectsTouch(plRect, pRect) && velY <= 0) {
-        y = (p.offsetTop + p.offsetHeight);
-        velY = 0;
-        onGround = true;
-      }
-    });
-
-    player.style.left = x + "px";
-    player.style.bottom = y + "px";
-
-    // WALK ANIMATION
-    walkFrame++;
-    if (walkFrame % 20 < 10) {
-      player.className = "walk1";
-    } else {
-      player.className = "walk2";
-    }
-
-    // CAMERA FOLLOW
-    game.style.transform = `translateX(${-x + 200}px)`;
-
-    // COINS
-    coins.forEach(c => {
-      if (c.style.display !== "none" && rectsTouch(player.getBoundingClientRect(), c.getBoundingClientRect())) {
-        c.style.display = "none";
-        score++;
-        scoreText.textContent = score;
-      }
-    });
-
-    // ENEMIES
-    enemies.forEach(e => {
-      if (rectsTo
+    function loop() {
+      velocityY -= gravity;
+      y += velocityY;
