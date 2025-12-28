@@ -1,95 +1,252 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Game</title>
-  <style>
-    body {
-      margin: 0;
-      background: #87ceeb;
-      overflow: hidden;
-    }
+<title>My Game</title>
+<style>
+body{
+  margin:0;
+  background:#87ceeb;
+  overflow:hidden;
+  touch-action:none;
+  font-family:Arial;
+}
 
-    #player {
-      position: absolute;
-      width: 40px;
-      height: 60px;
-      background: red;
-      left: 100px;
-      bottom: 50px;
-    }
+#player{position:absolute;width:40px;height:60px;background:red;bottom:50px;}
+.enemy{position:absolute;width:40px;height:40px;background:purple;bottom:50px;}
+#boss{position:absolute;width:80px;height:80px;background:darkred;bottom:50px;display:none;}
+.bullet{position:absolute;width:10px;height:5px;background:black;}
+#flag{position:absolute;width:30px;height:60px;background:gold;bottom:50px;right:40px;}
+#checkpoint{position:absolute;width:30px;height:30px;background:blue;bottom:50px;left:500px;}
+#powerup{position:absolute;width:30px;height:30px;background:yellow;bottom:50px;left:300px;}
+#ground{position:absolute;bottom:0;width:100%;height:50px;background:green;}
 
-    #ground {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 50px;
-      background: green;
-    }
+#hud{
+  position:fixed;
+  top:10px;
+  left:10px;
+  font-size:16px;
+}
 
-    #text {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      font-family: Arial;
-      font-size: 16px;
-    }
-  </style>
+#controls{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+}
+
+button{font-size:20px;margin:5px;padding:10px;}
+</style>
 </head>
 
 <body>
 
-  <div id="text">Hold ⬅️ ➡️ | Press SPACE to jump</div>
-  <div id="player"></div>
-  <div id="ground"></div>
+<div id="hud">
+❤️ Lives: <span id="lives">5</span><br>
+⭐ Score: <span id="score">0</span><br>
+🧭 Level: <span id="level">1</span><br>
+👹 Boss HP: <span id="bossHP">5</span>
+</div>
 
-  <script>
-    const player = document.getElementById("player");
+<div id="controls">
+<button id="left">⬅️</button>
+<button id="jump">⤴️</button>
+<button id="right">➡️</button>
+<button id="shoot">🔫</button>
+</div>
 
-    let x = 100;
-    let y = 50;
-    let velY = 0;
-    let onGround = true;
+<div id="player"></div>
+<div class="enemy" style="left:300px"></div>
+<div class="enemy" style="left:600px"></div>
+<div id="boss"></div>
+<div id="checkpoint"></div>
+<div id="powerup"></div>
+<div id="flag"></div>
+<div id="ground"></div>
 
-    let keys = {};
+<script>
+const player=document.getElementById("player");
+const enemies=[...document.querySelectorAll(".enemy")];
+const boss=document.getElementById("boss");
+const checkpoint=document.getElementById("checkpoint");
+const powerup=document.getElementById("powerup");
 
-    const gravity = 1;
-    const jumpPower = 16;
-    const speed = 5;
+const livesText=document.getElementById("lives");
+const scoreText=document.getElementById("score");
+const levelText=document.getElementById("level");
+const bossHPText=document.getElementById("bossHP");
 
-    window.addEventListener("keydown", e => {
-      keys[e.key] = true;
+let lives=Number(localStorage.lives)||5;
+let score=Number(localStorage.score)||0;
+let level=Number(localStorage.level)||1;
 
-      if (e.key === " " && onGround) {
-        velY = jumpPower;
-        onGround = false;
+let spawnX=100,spawnY=50;
+let x=spawnX,y=spawnY,velX=0,velY=0,onGround=true;
+let bullets=[];
+let bossHP=5,bossActive=false,invincible=false;
+
+const gravity=1,speed=5,jumpPower=16;
+const keys={};
+
+// 🔊 SIMPLE SOUND ENGINE
+const audio=new (window.AudioContext||window.webkitAudioContext)();
+function sound(freq,time){
+  const o=audio.createOscillator();
+  const g=audio.createGain();
+  o.connect(g); g.connect(audio.destination);
+  o.frequency.value=freq;
+  g.gain.value=0.1;
+  o.start();
+  o.stop(audio.currentTime+time);
+}
+
+// SAVE
+function save(){
+  localStorage.lives=lives;
+  localStorage.score=score;
+  localStorage.level=level;
+}
+
+// HITBOX
+function hit(a,b){
+  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+}
+
+// 🎮 MOBILE CONTROLS
+left.onclick=()=>keys["ArrowLeft"]=true;
+right.onclick=()=>keys["ArrowRight"]=true;
+jump.onclick=()=>{if(onGround){velY=jumpPower;onGround=false;sound(600,.1);}};
+shoot.onclick=shootBullet;
+
+// ⌨️ KEYBOARD
+window.addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+  keys[e.key]=true;
+  if(e.key===" "&&onGround){velY=jumpPower;onGround=false;sound(600,.1);}
+  if(e.key==="f") shootBullet();
+});
+window.addEventListener("keyup",e=>keys[e.key]=false);
+
+// 🔫 SHOOTING
+function shootBullet(){
+  bullets.push({x:x+40,y:y+30});
+  sound(300,.05);
+}
+
+// ☠️ RESPAWN
+function respawn(){
+  if(!invincible) lives--;
+  sound(200,.3);
+  if(lives<=0){
+    lives=5;score=0;level=1;
+    bossHP=5;bossActive=false;
+    boss.style.display="none";
+  }
+  save();
+  x=spawnX;y=spawnY;velX=velY=0;
+}
+
+// ⭐ POWER-UP
+function activateStar(){
+  invincible=true;
+  powerup.style.display="none";
+  sound(800,.2);
+  setTimeout(()=>invincible=false,5000);
+}
+
+// 👹 BOSS SPAWN
+function spawnBoss(){
+  if(enemies.length===0&&!bossActive){
+    bossActive=true;
+    boss.style.display="block";
+    boss.style.left="700px";
+  }
+}
+
+// 🔁 GAME LOOP
+function loop(){
+  velX=keys["ArrowRight"]?speed:keys["ArrowLeft"]?-speed:0;
+  x+=velX;
+  if(velX!==0) score++;
+
+  velY-=gravity; y+=velY;
+  if(y<=50){y=50;velY=0;onGround=true;}
+
+  bullets.forEach(b=>b.x+=8);
+  bullets=bullets.filter(b=>b.x<innerWidth);
+
+  document.querySelectorAll(".bullet").forEach(b=>b.remove());
+  bullets.forEach(b=>{
+    const el=document.createElement("div");
+    el.className="bullet";
+    el.style.left=b.x+"px";
+    el.style.bottom=b.y+"px";
+    document.body.appendChild(el);
+  });
+
+  enemies.forEach((e,i)=>{
+    const ex=parseInt(e.style.left);
+    e.style.left=ex+(Math.sin(Date.now()/500)*2)+"px";
+
+    const p={left:x,right:x+40,top:y+60,bottom:y};
+    const eb={left:ex,right:ex+40,top:90,bottom:50};
+
+    if(hit(p,eb)) respawn();
+
+    bullets.forEach((b,bi)=>{
+      const bb={left:b.x,right:b.x+10,top:b.y+10,bottom:b.y};
+      if(hit(bb,eb)){
+        e.remove();
+        enemies.splice(i,1);
+        bullets.splice(bi,1);
+        score+=50;
+        spawnBoss();
       }
     });
+  });
 
-    window.addEventListener("keyup", e => {
-      keys[e.key] = false;
-    });
+  if(bossActive){
+    const bx=parseInt(boss.style.left);
+    boss.style.left=(bx+(bx>x?-2:2))+"px";
 
-    function loop() {
-      if (keys["ArrowRight"]) x += speed;
-      if (keys["ArrowLeft"]) x -= speed;
-
-      velY -= gravity;
-      y += velY;
-
-      if (y <= 50) {
-        y = 50;
-        velY = 0;
-        onGround = true;
+    bullets.forEach((b,bi)=>{
+      const bb={left:b.x,right:b.x+10,top:b.y+10,bottom:b.y};
+      const bo={left:bx,right:bx+80,top:130,bottom:50};
+      if(hit(bb,bo)){
+        bossHP--;
+        bossHPText.textContent=bossHP;
+        bullets.splice(bi,1);
+        sound(100,.1);
+        if(bossHP<=0){
+          alert("YOU WIN!");
+          localStorage.clear();
+          location.reload();
+        }
       }
+    });
+  }
 
-      player.style.left = x + "px";
-      player.style.bottom = y + "px";
+  const cp={left:500,right:530,top:80,bottom:50};
+  if(hit({left:x,right:x+40,top:y+60,bottom:y},cp)){
+    spawnX=500;
+    checkpoint.style.display="none";
+  }
 
-      requestAnimationFrame(loop);
-    }
+  const pu={left:300,right:330,top:80,bottom:50};
+  if(hit({left:x,right:x+40,top:y+60,bottom:y},pu)){
+    activateStar();
+  }
 
-    loop();
-  </script>
+  player.style.left=x+"px";
+  player.style.bottom=y+"px";
+
+  livesText.textContent=lives;
+  scoreText.textContent=score;
+  levelText.textContent=level;
+
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
 
 </body>
 </html>
+
